@@ -1,4 +1,6 @@
+
 import { Suspense } from "react";
+import { connection } from "next/server";
 import { Leaf, LoaderCircle, SearchX } from "lucide-react";
 
 import UpcommingHeader from "@/components/upcommingEvent/UpcommingHeader";
@@ -6,6 +8,9 @@ import UpcommingEvent from "@/components/upcommingEvent/UpcommintEvent";
 
 // Upcoming Events Data
 async function UpcomingEventsContent({ searchParams }) {
+  // Wait for an incoming request before running dynamic work
+  await connection();
+
   const paramsObj = await searchParams;
 
   const search = paramsObj?.search || "";
@@ -21,53 +26,42 @@ async function UpcomingEventsContent({ searchParams }) {
     params.append("category", category);
   }
 
+  const baseUrl = process.env.NEXT_PUBLIC_URL;
+
+  if (!baseUrl) {
+    throw new Error("NEXT_PUBLIC_URL is not configured.");
+  }
+
   const url = params.toString()
-    ? `${process.env.NEXT_PUBLIC_URL}/event/search?${params.toString()}`
-    : `${process.env.NEXT_PUBLIC_URL}/createEvent`;
+    ? `${baseUrl}/event/search?${params.toString()}`
+    : `${baseUrl}/createEvent`;
+
+  let events = [];
 
   try {
     const res = await fetch(url, {
+      method: "GET",
       cache: "no-store",
     });
 
     if (!res.ok) {
-      throw new Error("Failed to fetch events");
+      const errorText = await res.text();
+
+      console.error("Upcoming events API error:", {
+        status: res.status,
+        message: errorText,
+      });
+
+      throw new Error(`Failed to fetch events. Status: ${res.status}`);
     }
 
-    const events = await res.json();
+    const data = await res.json();
 
-    return (
-      <main className="min-h-screen bg-gradient-to-b from-emerald-50/60 via-white to-white px-3 py-8 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          {/* Page Header */}
-          <UpcommingHeader />
+    if (!Array.isArray(data)) {
+      throw new Error("Invalid events response.");
+    }
 
-          {/* Events */}
-          {Array.isArray(events) && events.length > 0 ? (
-            <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
-              {events.map((event) => (
-                <UpcommingEvent key={event._id} event={event} />
-              ))}
-            </div>
-          ) : (
-            <div className="flex min-h-[350px] flex-col items-center justify-center rounded-3xl border border-dashed border-emerald-200 bg-emerald-50/40 px-5 text-center">
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100">
-                <SearchX className="h-8 w-8 text-emerald-600" />
-              </div>
-
-              <h2 className="text-xl font-bold text-gray-800">
-                No Events Found!
-              </h2>
-
-              <p className="mt-2 max-w-sm text-sm leading-6 text-gray-500">
-                We couldn't find any events matching your search. Try another
-                keyword or category.
-              </p>
-            </div>
-          )}
-        </div>
-      </main>
-    );
+    events = data;
   } catch (error) {
     console.error("Upcoming events error:", error);
 
@@ -89,6 +83,39 @@ async function UpcomingEventsContent({ searchParams }) {
       </main>
     );
   }
+
+  return (
+    <main className="min-h-screen bg-gradient-to-b from-emerald-50/60 via-white to-white px-3 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">
+        {/* Page Header */}
+        <UpcommingHeader />
+
+        {/* Events */}
+        {events.length > 0 ? (
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
+            {events.map((event) => (
+              <UpcommingEvent key={event._id} event={event} />
+            ))}
+          </div>
+        ) : (
+          <div className="flex min-h-[350px] flex-col items-center justify-center rounded-3xl border border-dashed border-emerald-200 bg-emerald-50/40 px-5 text-center">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100">
+              <SearchX className="h-8 w-8 text-emerald-600" />
+            </div>
+
+            <h2 className="text-xl font-bold text-gray-800">
+              No Events Found!
+            </h2>
+
+            <p className="mt-2 max-w-sm text-sm leading-6 text-gray-500">
+              We couldn't find any events matching your search. Try another
+              keyword or category.
+            </p>
+          </div>
+        )}
+      </div>
+    </main>
+  );
 }
 
 // Loading Skeleton

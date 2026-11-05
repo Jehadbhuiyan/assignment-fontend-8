@@ -15,46 +15,84 @@ import {
 
 import { headers } from "next/headers";
 import Link from "next/link";
+import { connection } from "next/server";
 
 async function JoinEventContent() {
+await connection();
+
+  // 2. Get request headers (শুধু একবার)
   const resolvedHeaders = await headers();
 
-  const session = await auth.api.getSession({
-    headers: resolvedHeaders,
-  });
+  let events = [];
+  let errorMessage = "";
 
-  const user = session?.user;
+  try {
+    // 3. Get logged-in user session
+    const session = await auth.api.getSession({
+      headers: resolvedHeaders,
+    });
 
-  if (!user?.email) {
-    return (
-      <main className="min-h-screen px-3 pb-16 pt-28 sm:px-6 sm:pt-32 lg:px-10">
-        <div className="mx-auto max-w-7xl">
-          <h1 className="text-2xl font-bold text-slate-900">
-            Please login first
-          </h1>
-        </div>
-      </main>
-    );
-  }
+    const user = session?.user;
 
-  const jwtToken = await auth.api.getToken({
-    headers: resolvedHeaders,
-  });
-
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_URL}/joinEvent/${user?.email}`,
-    {
-      headers: {
-        authorization: `bearer ${jwtToken?.token}`,
-      },
+    if (!user?.email) {
+      return (
+        <main className="min-h-screen px-3 pb-16 pt-28 sm:px-6 sm:pt-32 lg:px-10">
+          <div className="mx-auto max-w-7xl">
+            <h1 className="text-2xl font-bold text-slate-900">
+              Please login first
+            </h1>
+          </div>
+        </main>
+      );
     }
-  );
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch joined events");
+    // 4. Get JWT token
+    const jwtToken = await auth.api.getToken({
+      headers: resolvedHeaders,
+    });
+
+    if (!jwtToken?.token) {
+      throw new Error("Authentication token not found. Please login again.");
+    }
+
+    // 5. Fetch joined events
+    const apiUrl = `${process.env.NEXT_PUBLIC_URL}/joinEvent/${encodeURIComponent(
+      user.email
+    )}`;
+
+    const res = await fetch(apiUrl, {
+      method: "GET",
+      cache: "no-store",
+      headers: {
+        Authorization: `Bearer ${jwtToken.token}`,
+      },
+    });
+
+    // 6. Check API response
+    if (!res.ok) {
+      const errorText = await res.text();
+
+      console.error("Joined events API error:", {
+        status: res.status,
+        message: errorText,
+      });
+
+      throw new Error(`Failed to fetch joined events. Status: ${res.status}`);
+    }
+
+    // 7. Get response data
+    const data = await res.json();
+
+    if (!Array.isArray(data)) {
+      throw new Error("Invalid joined events response.");
+    }
+
+    events = data;
+
+  } catch (error) {
+    console.error("Joined events error:", error);
+    errorMessage = error.message || "Something went wrong.";
   }
-
-  const event = await res.json();
 
   return (
     <main className="min-h-screen px-3 pb-16 pt-28 sm:px-6 sm:pt-32 lg:px-10">
@@ -77,17 +115,35 @@ async function JoinEventContent() {
           </p>
         </div>
 
-        {/* Events Grid */}
-        {event.length > 0 ? (
+        {/* Error Message */}
+        {errorMessage ? (
+          <div className="rounded-2xl border border-red-100 bg-red-50 p-6 text-center">
+            <h2 className="text-lg font-bold text-red-700">
+              Unable to Load Joined Events
+            </h2>
+
+            <p className="mt-2 text-sm text-red-600">
+              {errorMessage}
+            </p>
+
+            <p className="mt-2 text-xs text-slate-500">
+              Please refresh the page or login again.
+            </p>
+          </div>
+        ) : events.length > 0 ? (
+
+          /* Events Grid */
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-7">
-            {event.map((item) => (
+            {events.map((item) => (
               <JoinEventCard key={item._id} event={item} />
             ))}
           </div>
+
         ) : (
+
+          /* Empty State */
           <div className="relative overflow-hidden rounded-[28px] border border-emerald-100 bg-gradient-to-br from-white via-emerald-50/50 to-teal-50/70 px-5 py-16 text-center shadow-sm sm:py-20">
 
-            {/* Background Decoration */}
             <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-emerald-100/50 blur-3xl" />
 
             <div className="pointer-events-none absolute -bottom-20 -left-16 h-48 w-48 rounded-full bg-teal-100/60 blur-3xl" />

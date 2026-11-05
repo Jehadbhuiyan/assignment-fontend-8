@@ -1,6 +1,6 @@
+
 import { Suspense } from "react";
 import {
-  ArrowLeft,
   CalendarDays,
   Leaf,
   MapPin,
@@ -13,21 +13,29 @@ import {
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import DetailsEventButton from "@/components/detailsPageButton/DetailsEventButton";
+
+// =========================
+// Details Content
+// =========================
+
 async function DetailsContent({ params }) {
-
-  
   const { id } = await params;
-  const resolvedHeaders = await headers();
-  const jwtToken = await auth.api.getToken({
-    headers: resolvedHeaders
-  })
 
-  const res = await fetch(`${progress.env.NEXT_PUBLIC_URL}/single-id/${id}`, {
-    cache: "no-store",
-    headers:{
-      authorization: `bearer ${jwtToken?.token}`
-    }
+  const resolvedHeaders = await headers();
+
+  const jwtToken = await auth.api.getToken({
+    headers: resolvedHeaders,
   });
+
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_URL}/single-id/${id}`,
+    {
+      cache: "no-store",
+      headers: {
+        authorization: `bearer ${jwtToken?.token}`,
+      },
+    }
+  );
 
   if (!res.ok) {
     throw new Error("Failed to fetch event");
@@ -54,6 +62,7 @@ async function DetailsContent({ params }) {
   return (
     <main className="min-h-screen bg-slate-50 px-3 pb-16 pt-24 sm:px-6 sm:pt-28 lg:px-10">
       <div className="mx-auto max-w-7xl">
+
         {/* Main Card */}
         <div className="overflow-hidden rounded-[28px] border border-emerald-100 bg-white shadow-[0_10px_40px_rgba(16,185,129,0.08)]">
 
@@ -271,7 +280,7 @@ async function DetailsContent({ params }) {
                   </div>
                 </div>
 
-                {/* Organizer icon */}
+                {/* Organizer Icon */}
                 <div className="mt-5 flex items-center gap-2 rounded-2xl bg-emerald-50 p-3">
                   <Leaf className="size-4 text-emerald-600" />
 
@@ -313,7 +322,9 @@ async function DetailsContent({ params }) {
                 </div>
 
               </div>
-             <DetailsEventButton singleData ={singleData}/>
+
+              <DetailsEventButton singleData={singleData} />
+
             </aside>
           </div>
         </div>
@@ -337,15 +348,22 @@ async function DetailsContent({ params }) {
   );
 }
 
+// =========================
+// Main Page + Suspense
+// =========================
+
 export default function DetailsPage({ params }) {
   return (
     <Suspense
       fallback={
         <main className="min-h-screen bg-slate-50 px-3 pb-16 pt-24 sm:px-6 sm:pt-28 lg:px-10">
           <div className="mx-auto max-w-7xl">
+
             <div className="overflow-hidden rounded-[28px] border border-emerald-100 bg-white shadow-sm">
+
               {/* Hero Image Skeleton */}
               <div className="relative h-[230px] animate-pulse bg-gradient-to-r from-emerald-100 via-emerald-50 to-emerald-100 sm:h-[360px] lg:h-[440px]">
+
                 <div className="absolute left-4 top-4 h-8 w-28 rounded-full bg-white/70 sm:left-7 sm:top-7" />
 
                 <div className="absolute right-4 top-4 h-8 w-24 rounded-full bg-white/70 sm:right-7 sm:top-7" />
@@ -362,8 +380,10 @@ export default function DetailsPage({ params }) {
 
               {/* Content Skeleton */}
               <div className="grid gap-6 p-4 sm:p-7 lg:grid-cols-[1fr_350px] lg:gap-8 lg:p-9">
+
                 {/* Left Content */}
                 <div className="space-y-7">
+
                   {/* About Event */}
                   <section>
                     <div className="mb-4 flex items-center gap-3">
@@ -401,6 +421,7 @@ export default function DetailsPage({ params }) {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="size-10 animate-pulse rounded-xl bg-white" />
+
                         <div className="space-y-2">
                           <div className="h-4 w-36 animate-pulse rounded bg-emerald-100" />
                           <div className="h-3 w-28 animate-pulse rounded bg-emerald-100" />
@@ -421,6 +442,7 @@ export default function DetailsPage({ params }) {
 
                 {/* Right Sidebar */}
                 <aside>
+
                   {/* Organizer Skeleton */}
                   <div className="rounded-3xl border border-emerald-100 bg-white p-5 shadow-sm">
                     <div className="h-3 w-28 animate-pulse rounded bg-slate-200" />
@@ -457,6 +479,7 @@ export default function DetailsPage({ params }) {
                     <div className="mt-2 h-3 w-3/4 animate-pulse rounded bg-slate-200" />
                     <div className="mt-5 h-12 animate-pulse rounded-full bg-emerald-200" />
                   </div>
+
                 </aside>
               </div>
             </div>
@@ -475,6 +498,7 @@ export default function DetailsPage({ params }) {
                 <span className="size-1.5 animate-bounce rounded-full bg-emerald-500 [animation-delay:300ms]" />
               </div>
             </div>
+
           </div>
         </main>
       }
