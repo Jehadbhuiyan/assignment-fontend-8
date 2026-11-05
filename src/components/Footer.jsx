@@ -187,7 +187,7 @@ export default function Footer() {
                       href="tel:+8801234567890"
                       className="mt-1 block text-[11px] text-slate-500 transition hover:text-emerald-400 sm:text-xs"
                     >
-                      +8801747252164
+                      +8801747252164n
                     </a>
                   </div>
                 </div>

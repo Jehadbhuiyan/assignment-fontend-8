@@ -36,6 +36,9 @@ const [isloading, setIsloading] = useState(false);
   const { data: session } = authClient.useSession();
   const user = session?.user;
 
+  
+
+
   const joineventhendler = async () => {
     if (!user) {
       toast.error("Please login to join this event");
@@ -43,7 +46,8 @@ const [isloading, setIsloading] = useState(false);
     }
 
     setIsloading(true);
-
+    const { data, error } = await authClient.token();
+    const token = data?.token;
     try {
       if (!isJoined) {
         // --- JOIN EVENT (POST) ---
@@ -64,6 +68,7 @@ const [isloading, setIsloading] = useState(false);
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            authorization: `bearer ${token}`
             
           },
           body: JSON.stringify(payload),

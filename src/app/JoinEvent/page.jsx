@@ -42,9 +42,8 @@ async function JoinEventContent() {
   });
 
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_URL}/joinEvent/${encodeURIComponent(user.email)}`,
+    `${process.env.NEXT_PUBLIC_URL}/joinEvent/${user?.email}`,
     {
-      cache: "no-store",
       headers: {
         authorization: `bearer ${jwtToken?.token}`,
       },
