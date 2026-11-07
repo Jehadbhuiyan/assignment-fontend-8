@@ -32,7 +32,7 @@ async function DetailsContent({ params }) {
     {
       cache: "no-store",
       headers: {
-        authorization: `bearer ${jwtToken?.token}`,
+        authorization: `Bearer ${jwtToken?.token}`,
       },
     }
   );

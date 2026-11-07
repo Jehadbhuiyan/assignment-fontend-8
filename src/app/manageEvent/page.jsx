@@ -99,7 +99,7 @@ const resolvedHeaders = await headers();
   const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/myCreateEvent/${user.email}`, {
     cache: "no-store",
     headers:{
-      authorization: `bearer ${jwtToken?.token}`
+      authorization: `Bearer ${jwtToken?.token}`
     }
   });
 

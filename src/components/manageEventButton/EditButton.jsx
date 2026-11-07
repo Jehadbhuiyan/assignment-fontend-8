@@ -130,7 +130,7 @@ export default function EditButton({ event }) {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-             authorization: `bearer ${token}`
+             authorization: `Bearer ${token}`
           },
           body: JSON.stringify(updatedEvent),
         }

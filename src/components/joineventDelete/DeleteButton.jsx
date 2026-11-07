@@ -34,7 +34,7 @@ const handleDelete = async () => {
       {
         method: "DELETE",
         headers:{
-          authorization: `bearer ${token}`
+          authorization: `Bearer ${token}`
         }
       }
     );

@@ -133,7 +133,7 @@ useEffect(() => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          authorization: `bearer ${token}`,
+          authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(addusers),
       });

@@ -33,7 +33,7 @@ const DelelteButton = ({ event }) => {
         {
           method: "DELETE",
           headers:{
-             authorization: `bearer ${token}`
+             authorization: `Bearer ${token}`
           }
         },
       );
