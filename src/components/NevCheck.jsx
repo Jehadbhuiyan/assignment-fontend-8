@@ -52,7 +52,7 @@ export default function ProfileDropdown({ mobile = false }) {
         <Users size={18} /> Joined Events
       </Link>
 
-      <Link href="/profile" onClick={() => setOpen(false)}
+      <Link href="/update-profile" onClick={() => setOpen(false)}
         className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700">
         <Settings size={18} /> Update Profile
       </Link>

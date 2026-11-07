@@ -11,6 +11,7 @@ import {
 
 import { authClient } from "@/lib/auth-client";
 import ProfileDropdown from "./NevCheck";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function Navbar() {
   const { data: session, isPending } = authClient.useSession();
@@ -53,6 +54,7 @@ export default function Navbar() {
 
         {/* Authentication */}
         <div className="flex shrink-0 items-center gap-2 sm:gap-5">
+          <ThemeToggle />
           {isPending ? (
             <div className="h-9 w-16 animate-pulse rounded-full bg-emerald-50 sm:h-10 sm:w-28" />
           ) : user ? (

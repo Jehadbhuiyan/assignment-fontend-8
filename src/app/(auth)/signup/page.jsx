@@ -6,12 +6,14 @@ import { useRouter } from "next/navigation";
 import { Outfit } from "next/font/google";
 
 import {
+  AlertCircle,
   ArrowLeft,
   ArrowRight,
-  ArrowUpRight,
+  CheckCircle2,
   CircleHelp,
   Eye,
   EyeOff,
+  Loader2,
   Lock,
   Mail,
   User,
@@ -44,7 +46,7 @@ const circleBtn =
   "flex size-10 shrink-0 items-center justify-center rounded-full border border-emerald-100 bg-white text-slate-600 shadow-sm transition-all duration-300 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700";
 
 const socialBtn =
-  "h-12 min-w-0 flex-1 rounded-full border border-slate-200 bg-white text-sm font-semibold text-slate-700 shadow-sm transition-all duration-300 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700";
+  "h-12 min-w-0 flex-1 rounded-full border border-slate-200 bg-white text-sm font-semibold text-slate-700 shadow-sm transition-all duration-300 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-60";
 
 function getStrength(password) {
   if (!password) return 0;
@@ -57,6 +59,49 @@ function getStrength(password) {
   if (/[^A-Za-z0-9]/.test(password)) score++;
 
   return Math.max(score, 1);
+}
+
+function showToast(type, title, description) {
+  const isSuccess = type === "success";
+
+  toast(
+    <div className="flex items-start gap-3">
+      <span
+        className={cn(
+          "flex size-9 shrink-0 items-center justify-center rounded-xl",
+          isSuccess
+            ? "bg-emerald-100 text-emerald-700"
+            : "bg-rose-100 text-rose-600",
+        )}
+      >
+        {isSuccess ? (
+          <CheckCircle2 className="size-5" />
+        ) : (
+          <AlertCircle className="size-5" />
+        )}
+      </span>
+
+      <div className="min-w-0">
+        <p className="text-sm font-bold text-slate-900">{title}</p>
+        {description && (
+          <p className="mt-0.5 text-xs leading-relaxed text-slate-500">
+            {description}
+          </p>
+        )}
+      </div>
+    </div>,
+    {
+      icon: false,
+      closeButton: false,
+      className: cn(
+        "!rounded-2xl !border !bg-white !p-3 !shadow-xl",
+        isSuccess
+          ? "!border-emerald-100 !shadow-emerald-900/10"
+          : "!border-rose-100 !shadow-rose-900/10",
+      ),
+      progressClassName: isSuccess ? "!bg-emerald-500" : "!bg-rose-500",
+    },
+  );
 }
 
 function GoogleIcon() {
@@ -102,7 +147,7 @@ function Field({ icon: Icon, right, ...props }) {
         <Icon className="size-[18px] shrink-0 text-slate-400 transition-colors duration-300 peer-focus:text-emerald-600" />
 
         <Input
-          className="h-full min-w-0 flex-1 border-0 bg-transparent p-0 text-sm font-medium text-slate-800 shadow-none placeholder:font-normal placeholder:text-slate-400 focus-visible:ring-0"
+          className="h-full min-w-0 flex-1 border-0 bg-transparent p-0 text-sm font-medium text-slate-800 shadow-none placeholder:font-normal placeholder:text-slate-400 focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-70"
           {...props}
         />
 
@@ -121,17 +166,26 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [image, setImage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState("");
 
   const strength = useMemo(() => getStrength(password), [password]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const users = new FormData(e.currentTarget);
-    const data = Object.fromEntries(users.entries());
-    console.log(data);
+    if (!agreed || isLoading) return;
 
-    if (!agreed) return;
+    if (password.length < 8) {
+      showToast(
+        "error",
+        "Weak password",
+        "Password must be at least 8 characters long.",
+      );
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
       const { data: resdata, error } = await authClient.signUp.email({
@@ -141,36 +195,66 @@ export default function SignupPage() {
         image: image.trim() || undefined,
       });
 
-      console.log("Signup Data:", resdata);
-      console.log("Signup Error:", error);
-
       if (error) {
-        toast.error(error);
+        showToast(
+          "error",
+          "Registration failed",
+          error.message || "Something went wrong. Please try again.",
+        );
         return;
       }
+
       if (resdata) {
-        toast.success("Welcome Ower Website");
+        showToast(
+          "success",
+          "Account created!",
+          "Welcome to GreenBond. Let's make the planet greener.",
+        );
         router.push("/");
+        router.refresh();
       }
     } catch (err) {
-      toast.error(err);
+      showToast(
+        "error",
+        "Registration failed",
+        err?.message || "Network error. Please check your connection.",
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const googleClickHendle = async () => {
-    await authClient.signIn.social({
-      provider: "google",
-    });
-    router("/");
-    router.refresh();
+  const socialLogin = async (provider) => {
+    if (socialLoading || isLoading) return;
+
+    setSocialLoading(provider);
+
+    try {
+      const { error } = await authClient.signIn.social({
+        provider,
+        callbackURL: "/",
+      });
+
+      if (error) {
+        showToast(
+          "error",
+          "Login failed",
+          error.message || `Could not sign in with ${provider}.`,
+        );
+        setSocialLoading("");
+      }
+    } catch (err) {
+      showToast(
+        "error",
+        "Login failed",
+        err?.message || `Could not sign in with ${provider}.`,
+      );
+      setSocialLoading("");
+    }
   };
-  const githubClickHendle = async () => {
-    await authClient.signIn.social({
-      provider: "github",
-    });
-    router("/");
-    router.refresh();
-  };
+
+  const googleClickHendle = () => socialLogin("google");
+  const githubClickHendle = () => socialLogin("github");
 
   return (
     <main
@@ -318,6 +402,7 @@ export default function SignupPage() {
                 onChange={(e) => setName(e.target.value)}
                 autoComplete="name"
                 required
+                disabled={isLoading}
               />
             </div>
 
@@ -336,6 +421,7 @@ export default function SignupPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
                 required
+                disabled={isLoading}
               />
             </div>
 
@@ -355,6 +441,7 @@ export default function SignupPage() {
                 name="image"
                 value={image}
                 onChange={(e) => setImage(e.target.value)}
+                disabled={isLoading}
               />
             </div>
 
@@ -373,14 +460,16 @@ export default function SignupPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
                 right={
                   <button
                     type="button"
+                    disabled={isLoading}
                     onClick={() => setShowPassword((v) => !v)}
                     aria-label={
                       showPassword ? "Hide password" : "Show password"
                     }
-                    className="shrink-0 text-slate-400 transition hover:text-emerald-700"
+                    className="shrink-0 text-slate-400 transition hover:text-emerald-700 disabled:cursor-not-allowed"
                   >
                     {showPassword ? (
                       <Eye className="size-[18px]" />
@@ -416,6 +505,7 @@ export default function SignupPage() {
               <Checkbox
                 id="terms"
                 checked={agreed}
+                disabled={isLoading}
                 onCheckedChange={(v) => setAgreed(v === true)}
                 className="mt-0.5 size-4 shrink-0 rounded border-slate-300 data-[state=checked]:border-emerald-600 data-[state=checked]:bg-emerald-600"
               />
@@ -444,11 +534,20 @@ export default function SignupPage() {
             {/* Submit */}
             <Button
               type="submit"
-              disabled={!agreed}
-              className="group mt-2 h-12 w-full rounded-full bg-emerald-700 text-sm font-bold text-white shadow-lg shadow-emerald-700/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-emerald-800 hover:shadow-emerald-700/30 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={!agreed || isLoading}
+              className="group mt-2 h-12 w-full rounded-full bg-emerald-700 text-sm font-bold text-white shadow-lg shadow-emerald-700/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-emerald-800 hover:shadow-emerald-700/30 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
             >
-              Create account
-              <ArrowRight className="ml-1 size-4 transition-transform duration-300 group-hover:translate-x-1" />
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  Creating account...
+                </>
+              ) : (
+                <>
+                  Create account
+                  <ArrowRight className="ml-1 size-4 transition-transform duration-300 group-hover:translate-x-1" />
+                </>
+              )}
             </Button>
 
             {/* Divider */}
@@ -464,9 +563,14 @@ export default function SignupPage() {
                 onClick={googleClickHendle}
                 type="button"
                 variant="outline"
+                disabled={isLoading || !!socialLoading}
                 className={socialBtn}
               >
-                <GoogleIcon />
+                {socialLoading === "google" ? (
+                  <Loader2 className="size-5 animate-spin" />
+                ) : (
+                  <GoogleIcon />
+                )}
                 Google
               </Button>
 
@@ -474,9 +578,14 @@ export default function SignupPage() {
                 onClick={githubClickHendle}
                 type="button"
                 variant="outline"
+                disabled={isLoading || !!socialLoading}
                 className={socialBtn}
               >
-                <GithubIcon />
+                {socialLoading === "github" ? (
+                  <Loader2 className="size-5 animate-spin" />
+                ) : (
+                  <GithubIcon />
+                )}
                 GitHub
               </Button>
             </div>
