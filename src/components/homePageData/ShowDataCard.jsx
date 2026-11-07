@@ -68,7 +68,7 @@ const [isloading, setIsloading] = useState(false);
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            authorization: `bearer ${token}`
+            authorization: `Bearer ${token}`
             
           },
           body: JSON.stringify(payload),

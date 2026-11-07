@@ -81,6 +81,7 @@ function SectionHeading({ number, icon: Icon, title, description }) {
 export default function CreateEventPage() {
   const [isCreating, setIsCreating] = useState(false);
  const [minDate, setMinDate] = useState("");
+ const router = useRouter()
 
 useEffect(() => {
   const tomorrow = new Date();
@@ -150,7 +151,7 @@ useEffect(() => {
         toast.success("Event created successfully!");
         router.push("upcommingEvent");
       }
-    } catch (error) {
+    } catch (err) {
       console.error(error);
       toast.error("Failed to create event!");
     } finally {
